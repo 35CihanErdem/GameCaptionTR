@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon />
+    <AssemblyName>GameCaptionTR</AssemblyName>
+    <RootNamespace>GameCaptionTR</RootNamespace>
+    <Product>GameCaptionTR</Product>
+    <Company>GameCaptionTR</Company>
+    <Description>Oyun alt yazılarını ekrandan okuyup Türkçeye çeviren güvenli overlay uygulaması. Oyuna enjekte olmaz.</Description>
+    <Version>1.0.0</Version>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Drawing.Common" Version="8.0.8" />
+  </ItemGroup>
+
+</Project>

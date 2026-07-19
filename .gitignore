@@ -1,0 +1,16 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+*.nupkg
+publish/
+*.log
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
