@@ -1,0 +1,29 @@
+<?xml version='1.0'?>
+<!--
+  GameCaptionTR obfuscation ayarları.
+  WPF pencereleri (x:Class ile XAML'e bağlı olanlar) korunur; aksi halde
+  BAML yüklemesi bozulur. Asıl iş mantığı (Services / Models) obfuscate edilir.
+-->
+<Obfuscator>
+  <Var name="InPath" value=".\obf_in" />
+  <Var name="OutPath" value=".\obf_out" />
+  <Var name="KeepPublicApi" value="false" />
+  <Var name="HidePrivateApi" value="true" />
+  <Var name="RenameProperties" value="true" />
+  <Var name="RenameEvents" value="true" />
+  <Var name="RenameFields" value="true" />
+  <Var name="ReuseNames" value="true" />
+  <Var name="UseUnicodeNames" value="true" />
+  <Var name="HideStrings" value="false" />
+  <Var name="OptimizeMethods" value="true" />
+  <Var name="SuppressIldasm" value="true" />
+
+  <Module file="$(InPath)\GameCaptionTR.dll">
+    <!-- XAML'e bağlı sınıflar: bunlar yeniden adlandırılırsa uygulama açılmaz -->
+    <SkipType name="GameCaptionTR.App" />
+    <SkipType name="GameCaptionTR.MainWindow" />
+    <SkipType name="GameCaptionTR.Views.OverlayWindow" />
+    <SkipType name="GameCaptionTR.Views.RegionSelectorWindow" />
+    <SkipType name="GameCaptionTR.Views.DocumentTranslationWindow" />
+  </Module>
+</Obfuscator>

@@ -1,0 +1,88 @@
+<Window x:Class="GameCaptionTR.Views.DocumentTranslationWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GameCaptionTR — Ekran Çevirisi"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Width="1100"
+        Height="720"
+        MinWidth="700"
+        MinHeight="450"
+        WindowStartupLocation="CenterScreen"
+        Background="#111827"
+        Topmost="True">
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,14">
+            <Button DockPanel.Dock="Right"
+                    Content="✕ Kapat"
+                    Click="CloseButton_Click"
+                    Padding="14,8"
+                    Foreground="White"
+                    Background="#DC2626"
+                    BorderThickness="0"
+                    Cursor="Hand"/>
+            <StackPanel>
+                <TextBlock Text="Ekran metni çevirisi"
+                           Foreground="White"
+                           FontSize="24"
+                           FontWeight="Bold"/>
+                <TextBlock Text="Ctrl + Shift + T ile farenin bulunduğu ekranı yeniden tara"
+                           Foreground="#9CA3AF"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Background="#1F2937" CornerRadius="12" Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="OCR — Orijinal"
+                               Foreground="#FDE68A"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="SourceText"
+                                   Foreground="#E5E7EB"
+                                   FontSize="17"
+                                   LineHeight="25"
+                                   TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Column="2" Background="#1F2937" CornerRadius="12" Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top"
+                               Text="Türkçe"
+                               Foreground="#A7F3D0"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <TextBlock x:Name="TranslatedText"
+                                   Foreground="White"
+                                   FontSize="18"
+                                   LineHeight="27"
+                                   TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="2"
+                   Text="Hazır"
+                   Foreground="#93C5FD"
+                   Margin="0,12,0,0"/>
+    </Grid>
+</Window>

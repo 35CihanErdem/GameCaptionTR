@@ -29,14 +29,14 @@ Sadece:
 ## Çalıştırma
 
 ```powershell
-cd C:\Users\cihan\GameCaptionTR\GameCaptionTR
+cd C:\Users\KULLANİCİ_ADİ\GameCaptionTR\GameCaptionTR
 dotnet run
 ```
 
 ## Yayınlama (tek klasör)
 
 ```powershell
-cd C:\Users\cihan\GameCaptionTR\GameCaptionTR
+cd C:\Users\KULLANİCİ_ADİ\GameCaptionTR\GameCaptionTR
 dotnet publish -c Release -r win-x64 --self-contained false -o ..\publish
 ```
 
@@ -51,6 +51,15 @@ dotnet publish -c Release -r win-x64 --self-contained false -o ..\publish
 5. Çeviri katmanını istediğin yere sürükle.
 6. Oyuna tıklamak için **Tıklamaları oyuna geçir** seçeneğini aç.
 
+### Kitap, broşür ve tam ekran metni çevirme
+
+1. Fareyi çevirmek istediğin ekranın üzerine götür.
+2. **Ctrl + Shift + T** tuşlarına bas.
+3. O ekrandaki metin bir kez OCR ile okunur ve uzun metinler parçalara ayrılarak Türkçeye çevrilir.
+4. Sonuç ayrı, kaydırılabilir pencerede açılır.
+
+Canlı altyazı panelini sağ üstteki **✕** düğmesiyle gizleyebilirsin.
+
 ## Sınırlar (dürüst not)
 
 - OCR, küçük/bulanık/çok süslü fontlarda hata yapabilir.
@@ -63,5 +72,15 @@ dotnet publish -c Release -r win-x64 --self-contained false -o ..\publish
 ```
 GameCaptionTR/
   GameCaptionTR/          # WPF uygulama
+  LICENSE                 # Tescilli lisans
   README.md
 ```
+
+## Lisans
+
+Bu proje **açık kaynak değildir**. Tüm hakları Cihan Erdem'e ([35CihanErdem](https://github.com/35CihanErdem)) aittir.
+
+- Yazılımı **satmak, dağıtmak, değiştirip yaymak veya kendi ürünü gibi sunmak yasaktır.**
+- Ticari veya kişisel kullanım için lisans satın almak isteyenler benimle iletişime geçmelidir.
+
+Ayrıntılar için [`LICENSE`](LICENSE) dosyasına bakın.

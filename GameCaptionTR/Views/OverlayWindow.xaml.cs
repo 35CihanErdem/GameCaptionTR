@@ -14,6 +14,8 @@ public partial class OverlayWindow : Window
 
     private bool _clickThrough;
 
+    public event Action? HideRequested;
+
     public OverlayWindow()
     {
         InitializeComponent();
@@ -56,6 +58,12 @@ public partial class OverlayWindow : Window
         {
             // sürükleme sırasında bırakılırsa WPF hata verebilir
         }
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        HideRequested?.Invoke();
+        Hide();
     }
 
     private void ApplyExtendedStyles()

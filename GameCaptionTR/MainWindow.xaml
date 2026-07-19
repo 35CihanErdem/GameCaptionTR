@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GameCaptionTR — Canlı Oyun Altyazı Çevirici"
+        Icon="pack://application:,,,/Assets/app.ico"
         Height="620"
         Width="780"
         MinHeight="560"
@@ -90,12 +91,15 @@
                           Foreground="#E5E7EB"
                           VerticalAlignment="Center"/>
 
-                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,8,0,0">
+                <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
                     <Button Content="1) Bölge Seç" Click="SelectRegion_Click"/>
                     <Button Content="2) Başlat" x:Name="StartButton" Click="Start_Click" Background="#059669"/>
                     <Button Content="Durdur" x:Name="StopButton" Click="Stop_Click" IsEnabled="False" Background="#DC2626"/>
                     <Button Content="Katmanı Göster" Click="ShowOverlay_Click" Background="#4B5563"/>
-                </StackPanel>
+                    <Button Content="Ekranı Çevir (Ctrl+Shift+T)"
+                            Click="TranslateScreen_Click"
+                            Background="#7C3AED"/>
+                </WrapPanel>
             </Grid>
         </Border>
 
@@ -103,7 +107,7 @@
             <StackPanel>
                 <TextBlock Text="Nasıl kullanılır" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="#D1D5DB"
-                           Text="1) Oyunu aç ve altyazıları aç.&#10;2) 'Bölge Seç' ile altyazının olduğu alanı işaretle.&#x0a;3) 'Başlat'a bas. Çeviri, sürükleyebileceğin şeffaf katmanda görünür.&#x0a;4) Oyun içinde tıklamak için 'Tıklamaları oyuna geçir' seçeneğini aç."/>
+                           Text="1) Oyunu aç ve altyazıları aç.&#10;2) 'Bölge Seç' ile altyazının olduğu alanı işaretle.&#x0a;3) 'Başlat'a bas. Çeviri, sürükleyebileceğin şeffaf katmanda görünür.&#x0a;4) Kitap, broşür veya menü için fareyi ilgili ekrana götürüp Ctrl+Shift+T'ye bas."/>
             </StackPanel>
         </Border>
 

@@ -29,6 +29,30 @@ public sealed class WindowsOcrService
         return Normalize(result.Text);
     }
 
+    public async Task<string> RecognizeDocumentAsync(
+        Bitmap bitmap,
+        string languageTag,
+        CancellationToken cancellationToken)
+    {
+        var engine = CreateEngine(languageTag);
+        if (engine is null)
+        {
+            throw new InvalidOperationException(
+                $"Windows OCR için '{languageTag}' dil paketi bulunamadı. " +
+                "Ayarlar > Zaman ve dil > Dil ve bölge bölümünden OCR dil paketini yükleyin.");
+        }
+
+        using var prepared = ResizeForDocumentOcr(bitmap);
+        using var softwareBitmap = await ToSoftwareBitmapAsync(prepared, cancellationToken);
+        var result = await engine.RecognizeAsync(softwareBitmap).AsTask(cancellationToken);
+
+        return string.Join(
+            Environment.NewLine,
+            result.Lines
+                .Select(line => line.Text.Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line)));
+    }
+
     public static IReadOnlyList<string> GetAvailableLanguages()
     {
         return OcrEngine.AvailableRecognizerLanguages
@@ -49,6 +73,27 @@ public sealed class WindowsOcrService
         }
 
         return OcrEngine.TryCreateFromUserProfileLanguages();
+    }
+
+    private static Bitmap ResizeForDocumentOcr(Bitmap source)
+    {
+        var limit = Math.Max(1000, (int)OcrEngine.MaxImageDimension - 16);
+        var largest = Math.Max(source.Width, source.Height);
+        if (largest <= limit)
+        {
+            return new Bitmap(source);
+        }
+
+        var scale = limit / (double)largest;
+        var width = Math.Max(1, (int)Math.Round(source.Width * scale));
+        var height = Math.Max(1, (int)Math.Round(source.Height * scale));
+        var resized = new Bitmap(width, height, PixelFormat.Format32bppArgb);
+
+        using var graphics = Graphics.FromImage(resized);
+        graphics.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+        graphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+        graphics.DrawImage(source, 0, 0, width, height);
+        return resized;
     }
 
     private static async Task<SoftwareBitmap> ToSoftwareBitmapAsync(Bitmap bitmap, CancellationToken cancellationToken)

@@ -1,0 +1,72 @@
+GameCaptionTR — Tescilli Yazılım Lisansı (Proprietary License)
+Telif Hakkı (c) 2026 Cihan Erdem (GitHub: 35CihanErdem). Tüm hakları saklıdır.
+
+TÜRKÇE
+================================================================================
+
+Bu yazılım ve ilgili tüm dosyalar ("Yazılım") Cihan Erdem'e ("Hak Sahibi")
+aittir ve telif hakkı yasalarıyla korunmaktadır. Bu Yazılım AÇIK KAYNAK
+DEĞİLDİR ve herhangi bir açık kaynak lisansı (MIT, GPL, Apache vb.) ile
+lisanslanmamıştır.
+
+1. MÜLKİYET
+   Yazılımın tüm fikri mülkiyet hakları münhasıran Hak Sahibi'ne aittir.
+   Bu depoya (repository) erişebiliyor olmanız, size Yazılım üzerinde
+   herhangi bir mülkiyet veya kullanım hakkı vermez.
+
+2. YASAKLAR
+   Hak Sahibi'nin ÖNCEDEN YAZILI İZNİ OLMADAN aşağıdakiler kesinlikle
+   YASAKTIR:
+   a) Yazılımı veya herhangi bir parçasını SATMAK, kiralamak, alt lisanslamak
+      veya başka bir şekilde ticari olarak kullanmak;
+   b) Yazılımı ücretli ya da ücretsiz olarak yeniden DAĞITMAK, yayımlamak
+      veya üçüncü kişilere sağlamak;
+   c) Yazılımın türev çalışmalarını (değiştirilmiş sürümlerini) oluşturmak
+      ve/veya dağıtmak;
+   d) Yazılımı kopyalayıp kendi ürünüymüş gibi sunmak (intihal);
+   e) Telif, lisans veya sahiplik bildirimlerini kaldırmak veya değiştirmek.
+
+3. İZİN VERİLEN KULLANIM
+   Hak Sahibi'nin yazılı izni (veya resmi bir satış/lisans anlaşması) olmadan
+   Yazılım'ın hiçbir kullanımına izin verilmez. Yazılımı kullanmak, edinmek
+   veya çalıştırmak isteyen herkes Hak Sahibi ile iletişime geçip ücretli
+   lisans satın almak zorundadır.
+
+4. LİSANS SATIN ALMA
+   Ticari kullanım, dağıtım veya kurumsal kullanım için lisans satın almak
+   isterseniz Hak Sahibi ile iletişime geçin:
+   GitHub: https://github.com/35CihanErdem
+
+5. GARANTİ REDDİ
+   Yazılım "OLDUĞU GİBİ" sunulur; açık ya da örtük hiçbir garanti verilmez.
+   Hak Sahibi, Yazılımın kullanımından doğabilecek hiçbir zarardan sorumlu
+   tutulamaz.
+
+6. FESİH
+   Bu lisans şartlarının ihlali, size tanınmış olabilecek her türlü hakkı
+   otomatik olarak ve derhal sona erdirir; ayrıca yasal yollara başvurma
+   hakkı saklıdır.
+
+================================================================================
+ENGLISH (informational summary)
+================================================================================
+
+This software ("Software") is proprietary and owned by Cihan Erdem
+("Owner"). It is NOT open source and is NOT licensed under MIT, GPL, Apache,
+or any other open-source license. All rights reserved.
+
+Without the Owner's PRIOR WRITTEN PERMISSION, you may NOT:
+  - sell, rent, sublicense, or otherwise commercially exploit the Software;
+  - redistribute, publish, or provide the Software to third parties
+    (whether for a fee or free of charge);
+  - create or distribute derivative/modified versions;
+  - present the Software as your own work;
+  - remove or alter any copyright, license, or ownership notices.
+
+No use of the Software is permitted without the Owner's written permission or
+a formal paid license agreement. To purchase a license, contact the Owner:
+GitHub: https://github.com/35CihanErdem
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. The Owner
+shall not be liable for any damages arising from the use of the Software.
+Any violation of these terms immediately terminates any rights granted.

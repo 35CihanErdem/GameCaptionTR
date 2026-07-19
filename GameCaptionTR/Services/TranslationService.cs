@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 
 namespace GameCaptionTR.Services;
@@ -65,6 +66,44 @@ public sealed class TranslationService : IDisposable
         _lastSource = text;
         _lastTranslation = translated;
         return translated;
+    }
+
+    public async Task<string> TranslateDocumentAsync(
+        string text,
+        string sourceLanguage,
+        string targetLanguage,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var result = new StringBuilder();
+        foreach (var chunk in SplitIntoChunks(text, 1200))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var translated = await TranslateAsync(
+                chunk,
+                sourceLanguage,
+                targetLanguage,
+                cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(translated))
+            {
+                continue;
+            }
+
+            if (result.Length > 0)
+            {
+                result.AppendLine();
+                result.AppendLine();
+            }
+
+            result.Append(translated);
+        }
+
+        return result.ToString();
     }
 
     private async Task<string> TranslateWithGoogleAsync(string text, string source, string target, CancellationToken cancellationToken)
@@ -180,6 +219,45 @@ public sealed class TranslationService : IDisposable
         }
 
         return d[n, m];
+    }
+
+    private static IEnumerable<string> SplitIntoChunks(string text, int maxLength)
+    {
+        var paragraphs = text
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        var current = new StringBuilder();
+        foreach (var paragraph in paragraphs)
+        {
+            foreach (var word in paragraph.Split(
+                         ' ',
+                         StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                if (current.Length > 0 && current.Length + word.Length + 1 > maxLength)
+                {
+                    yield return current.ToString();
+                    current.Clear();
+                }
+
+                if (current.Length > 0)
+                {
+                    current.Append(' ');
+                }
+
+                current.Append(word);
+            }
+
+            if (current.Length > 0 && current.Length + 2 <= maxLength)
+            {
+                current.AppendLine();
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            yield return current.ToString().Trim();
+        }
     }
 
     public void Dispose() => _http.Dispose();

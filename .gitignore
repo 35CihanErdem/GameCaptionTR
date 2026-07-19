@@ -8,6 +8,10 @@ obj/
 .vs/
 *.nupkg
 publish/
+dist/
+obf_in/
+obf_out/
+Mapping.txt
 *.log
 
 ## OS
