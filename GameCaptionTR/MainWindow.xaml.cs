@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     private const uint ModControl = 0x0002;
     private const uint ModShift = 0x0004;
     private const uint KeyT = 0x54;
+    private const uint WdaNone = 0x00000000;
     private const uint WdaExcludeFromCapture = 0x00000011;
 
     private readonly AppSettings _settings;
@@ -37,6 +38,31 @@ public partial class MainWindow : Window
         LoadUiFromSettings();
         WirePipeline();
         SourceInitialized += MainWindow_SourceInitialized;
+        Loaded += (_, _) =>
+        {
+            if (!ShowSafetyDisclaimerIfNeeded(force: false))
+            {
+                return;
+            }
+
+            // RDP otomatik algılandıysa uzak erişim modunu aç
+            if (OverlayWindow.DetectRemoteSession())
+            {
+                _settings.RemoteAccessMode = true;
+                RemoteAccessCheck.IsChecked = true;
+            }
+
+            ApplyMainWindowCaptureAffinity();
+            EnsureOverlay();
+
+            Show();
+            WindowState = WindowState.Normal;
+            Activate();
+
+            StatusText.Text = UseRemoteCompatibleOverlay()
+                ? "Uzak erişim modu açık — panel + menü uzaktan görünür."
+                : "Çeviri paneli açıldı. Uzaktan bağlanacaksan 'Uzak erişim modu'nu aç.";
+        };
         Closed += async (_, _) => await ShutdownAsync();
     }
 
@@ -45,6 +71,25 @@ public partial class MainWindow : Window
         IntervalBox.Text = _settings.IntervalMs.ToString();
         FontSizeBox.Text = _settings.OverlayFontSize.ToString("0");
         ClickThroughCheck.IsChecked = _settings.ClickThrough;
+        ShowInCapturesCheck.IsChecked = _settings.ShowOverlayInCaptures;
+        RemoteAccessCheck.IsChecked = _settings.RemoteAccessMode || OverlayWindow.DetectRemoteSession();
+        ShowInCapturesCheck.Checked += (_, _) => ApplyCaptureVisibility();
+        ShowInCapturesCheck.Unchecked += (_, _) => ApplyCaptureVisibility();
+        RemoteAccessCheck.Checked += (_, _) => ApplyRemoteAccessMode();
+        RemoteAccessCheck.Unchecked += (_, _) => ApplyRemoteAccessMode();
+
+        TranslationModeCombo.Items.Add("Otomatik (önerilen)");
+        TranslationModeCombo.Items.Add("Çevrimiçi");
+        TranslationModeCombo.Items.Add("Çevrimdışı");
+        TranslationModeCombo.SelectedIndex = _settings.TranslationModeSetting switch
+        {
+            "Online" => 1,
+            "Offline" => 2,
+            _ => 0
+        };
+
+        _documentTranslator.StatusChanged += msg => Dispatcher.Invoke(() => StatusText.Text = msg);
+        UpdateOfflineModelStatus();
 
         foreach (var lang in WindowsOcrService.GetAvailableLanguages())
         {
@@ -78,7 +123,77 @@ public partial class MainWindow : Window
         _pipeline.SourceLanguage = NormalizeLanguageTag(SourceLanguageCombo.SelectedItem as string ?? "en");
         _pipeline.TargetLanguage = "tr";
         _pipeline.IntervalMs = _settings.IntervalMs;
+        ApplyTranslationModeFromUi();
     }
+
+    private void TranslationModeCombo_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (!IsLoaded)
+        {
+            return;
+        }
+
+        ApplyTranslationModeFromUi();
+        _settings.TranslationModeSetting = GetSelectedTranslationModeSetting();
+        _settings.Save();
+        UpdateOfflineModelStatus();
+    }
+
+    private async void DownloadOfflineModel_Click(object sender, RoutedEventArgs e)
+    {
+        DownloadOfflineModelButton.IsEnabled = false;
+        StatusText.Text = "Çevrimdışı model indiriliyor…";
+        try
+        {
+            _documentTranslator.Mode = TranslationMode.Offline;
+            await _documentTranslator.DownloadOfflineModelAsync(CancellationToken.None);
+            UpdateOfflineModelStatus();
+            StatusText.Text = "Çevrimdışı model hazır. İnternetsiz oynayabilirsin.";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Model indirilemedi: " + ex.Message;
+        }
+        finally
+        {
+            DownloadOfflineModelButton.IsEnabled = true;
+        }
+    }
+
+    private void UpdateOfflineModelStatus()
+    {
+        if (_documentTranslator.IsOfflineModelInstalled)
+        {
+            OfflineModelStatusText.Text = "Çevrimdışı model kurulu — İngilizce→Türkçe, internet gerekmez.";
+            DownloadOfflineModelButton.Content = "Model güncelle / yeniden indir";
+        }
+        else
+        {
+            OfflineModelStatusText.Text = "Çevrimdışı mod için modeli bir kez indir (~530 MB).";
+            DownloadOfflineModelButton.Content = "Çevrimdışı modeli indir (~530MB)";
+        }
+    }
+
+    private void ApplyTranslationModeFromUi()
+    {
+        var mode = ParseTranslationMode(GetSelectedTranslationModeSetting());
+        _pipeline.TranslationMode = mode;
+        _documentTranslator.Mode = mode;
+    }
+
+    private string GetSelectedTranslationModeSetting() => TranslationModeCombo.SelectedIndex switch
+    {
+        1 => "Online",
+        2 => "Offline",
+        _ => "Auto"
+    };
+
+    private static TranslationMode ParseTranslationMode(string setting) => setting switch
+    {
+        "Online" => TranslationMode.Online,
+        "Offline" => TranslationMode.Offline,
+        _ => TranslationMode.Auto
+    };
 
     private void WirePipeline()
     {
@@ -99,6 +214,59 @@ public partial class MainWindow : Window
             TranslatedPreview.Text = string.Empty;
             _overlay?.ClearCaption();
         });
+    }
+
+    private void ShowSafetyDisclaimer_Click(object sender, RoutedEventArgs e)
+    {
+        ShowSafetyDisclaimerIfNeeded(force: true);
+    }
+
+    /// <summary>
+    /// İlk açılış veya Başlat öncesi güvenlik uyarısı. false = kullanıcı reddetti / kabul etmedi.
+    /// </summary>
+    private bool ShowSafetyDisclaimerIfNeeded(bool force)
+    {
+        if (!force && _settings.SafetyDisclaimerAccepted)
+        {
+            return true;
+        }
+
+        var dialog = new SafetyDisclaimerWindow
+        {
+            Owner = this
+        };
+        dialog.SetInformationalOnly(force && _settings.SafetyDisclaimerAccepted);
+
+        var ok = dialog.ShowDialog() == true && (dialog.Accepted || dialog.InformationalOnly);
+        if (!ok)
+        {
+            Application.Current.Shutdown();
+            return false;
+        }
+
+        if (!dialog.InformationalOnly)
+        {
+            _settings.SafetyDisclaimerAccepted = true;
+            if (dialog.DontShowAgain)
+            {
+                _settings.SafetyDisclaimerDismissed = true;
+            }
+
+            _settings.Save();
+        }
+
+        return true;
+    }
+
+    private bool EnsureSafetyAccepted()
+    {
+        if (_settings.SafetyDisclaimerAccepted)
+        {
+            return true;
+        }
+
+        StatusText.Text = "Devam etmek için güvenlik uyarısını kabul etmelisin.";
+        return ShowSafetyDisclaimerIfNeeded(force: true);
     }
 
     private void SelectRegion_Click(object sender, RoutedEventArgs e)
@@ -131,6 +299,11 @@ public partial class MainWindow : Window
 
     private async void Start_Click(object sender, RoutedEventArgs e)
     {
+        if (!EnsureSafetyAccepted())
+        {
+            return;
+        }
+
         ApplyRuntimeSettings();
         _overlaySuppressed = false;
         EnsureOverlay();
@@ -156,6 +329,11 @@ public partial class MainWindow : Window
 
     private async void TranslateScreen_Click(object sender, RoutedEventArgs e)
     {
+        if (!EnsureSafetyAccepted())
+        {
+            return;
+        }
+
         await TranslateCursorScreenAsync();
     }
 
@@ -174,49 +352,174 @@ public partial class MainWindow : Window
         }
 
         _settings.ClickThrough = ClickThroughCheck.IsChecked == true;
+        _settings.ShowOverlayInCaptures = ShowInCapturesCheck.IsChecked == true;
+        _settings.RemoteAccessMode = RemoteAccessCheck.IsChecked == true;
         _settings.SourceLanguage = NormalizeLanguageTag(SourceLanguageCombo.SelectedItem as string ?? "en");
+        _settings.TranslationModeSetting = GetSelectedTranslationModeSetting();
         _settings.Save();
 
         _pipeline.IntervalMs = _settings.IntervalMs;
         _pipeline.SourceLanguage = _settings.SourceLanguage;
         _pipeline.TargetLanguage = "tr";
+        ApplyTranslationModeFromUi();
 
         if (_overlay is not null)
         {
             _overlay.SetFontSize(_settings.OverlayFontSize);
             _overlay.SetClickThrough(_settings.ClickThrough);
+            _overlay.SetVisibleInCaptures(_settings.ShowOverlayInCaptures || _settings.RemoteAccessMode);
         }
+    }
+
+    private void ApplyCaptureVisibility()
+    {
+        _settings.ShowOverlayInCaptures = ShowInCapturesCheck.IsChecked == true;
+        _settings.Save();
+        _overlay?.SetVisibleInCaptures(_settings.ShowOverlayInCaptures || UseRemoteCompatibleOverlay());
+        StatusText.Text = _settings.ShowOverlayInCaptures
+            ? "Kayıt modu açık: panel Win+G / Discord'da görünür."
+            : "Panel kayıttan gizli (OCR kendini çevirmesin diye).";
+    }
+
+    private void ApplyRemoteAccessMode()
+    {
+        _settings.RemoteAccessMode = RemoteAccessCheck.IsChecked == true;
+        _settings.Save();
+        ApplyMainWindowCaptureAffinity();
+
+        // AllowsTransparency sonradan değişmez — paneli yeniden oluştur
+        RecreateOverlay();
+        RecreateDocumentWindowIfNeeded();
+        Show();
+        Activate();
+        StatusText.Text = _settings.RemoteAccessMode
+            ? "Uzak erişim modu açık. RDP/AnyDesk ile menü + tüm panelleri görebilirsin."
+            : "Uzak erişim modu kapalı. Yerelde şeffaf panel.";
+    }
+
+    private bool UseRemoteCompatibleOverlay() =>
+        _settings.RemoteAccessMode ||
+        RemoteAccessCheck.IsChecked == true ||
+        OverlayWindow.DetectRemoteSession();
+
+    private void RecreateOverlay()
+    {
+        if (_overlay is not null)
+        {
+            _settings.OverlayLeft = _overlay.Left;
+            _settings.OverlayTop = _overlay.Top;
+            _settings.OverlayWidth = _overlay.Width;
+            _overlay.Close();
+            _overlay = null;
+        }
+
+        _overlaySuppressed = false;
+        EnsureOverlay();
     }
 
     private void EnsureOverlay()
     {
+        _overlaySuppressed = false;
+        var remote = UseRemoteCompatibleOverlay();
+
+        // Mod değiştiyse (şeffaf <-> opak) pencereyi yeniden yarat
+        if (_overlay is not null && _overlay.IsRemoteCompatible != remote)
+        {
+            _settings.OverlayLeft = _overlay.Left;
+            _settings.OverlayTop = _overlay.Top;
+            _settings.OverlayWidth = _overlay.Width;
+            _overlay.Close();
+            _overlay = null;
+        }
+
         if (_overlay is not null)
         {
+            ClampOverlayToVisibleScreen(_overlay);
+            _overlay.SetFontSize(_settings.OverlayFontSize);
+            _overlay.SetClickThrough(_settings.ClickThrough);
+            _overlay.SetVisibleInCaptures(_settings.ShowOverlayInCaptures || remote);
+
             if (!_overlay.IsVisible)
             {
                 _overlay.Show();
             }
 
+            BringOverlayToFront(_overlay);
             return;
         }
 
-        _overlay = new OverlayWindow
+        _overlay = new OverlayWindow(remote)
         {
-            Left = _settings.OverlayLeft,
-            Top = _settings.OverlayTop,
-            Width = _settings.OverlayWidth
+            Width = _settings.OverlayWidth > 200 ? _settings.OverlayWidth : 900,
+            Height = 180
         };
+        ClampOverlayToVisibleScreen(_overlay);
         _overlay.SetFontSize(_settings.OverlayFontSize);
         _overlay.SetClickThrough(_settings.ClickThrough);
         _overlay.HideRequested += () => _overlaySuppressed = true;
         _overlay.LocationChanged += (_, _) =>
         {
+            if (_overlay is null)
+            {
+                return;
+            }
+
             _settings.OverlayLeft = _overlay.Left;
             _settings.OverlayTop = _overlay.Top;
         };
-        _overlay.SizeChanged += (_, _) => _settings.OverlayWidth = _overlay.Width;
+        _overlay.SizeChanged += (_, _) =>
+        {
+            if (_overlay is not null)
+            {
+                _settings.OverlayWidth = _overlay.Width;
+            }
+        };
         _overlay.Closed += (_, _) => _overlay = null;
         _overlay.Show();
+        _overlay.SetVisibleInCaptures(_settings.ShowOverlayInCaptures || remote);
+        BringOverlayToFront(_overlay);
+    }
+
+    private void BringOverlayToFront(OverlayWindow overlay)
+    {
+        overlay.Show();
+        overlay.WindowState = WindowState.Normal;
+        overlay.Topmost = false;
+        overlay.Topmost = true;
+        overlay.Activate();
+    }
+
+    private void ClampOverlayToVisibleScreen(OverlayWindow overlay)
+    {
+        var width = overlay.Width > 0 ? overlay.Width : 900;
+        var height = overlay.Height > 0 ? overlay.Height : 180;
+
+        // DIP cinsinden çalışma alanı (görev çubuğu hariç)
+        var work = SystemParameters.WorkArea;
+        var left = _settings.OverlayLeft;
+        var top = _settings.OverlayTop;
+
+        var fullyVisible =
+            !double.IsNaN(left) && !double.IsNaN(top) &&
+            left >= work.Left &&
+            top >= work.Top &&
+            left + width <= work.Right &&
+            top + height <= work.Bottom;
+
+        if (!fullyVisible)
+        {
+            // Ekranın ortası-altı: her zaman görünür güvenli konum
+            left = work.Left + Math.Max(20, (work.Width - width) / 2);
+            top = work.Top + Math.Max(20, work.Height - height - 40);
+        }
+
+        left = Math.Clamp(left, work.Left, Math.Max(work.Left, work.Right - 160));
+        top = Math.Clamp(top, work.Top, Math.Max(work.Top, work.Bottom - height - 8));
+
+        overlay.Left = left;
+        overlay.Top = top;
+        _settings.OverlayLeft = left;
+        _settings.OverlayTop = top;
     }
 
     private void MainWindow_SourceInitialized(object? sender, EventArgs e)
@@ -225,11 +528,24 @@ public partial class MainWindow : Window
         _windowSource = HwndSource.FromHwnd(handle);
         _windowSource?.AddHook(WindowMessageHook);
 
-        SetWindowDisplayAffinity(handle, WdaExcludeFromCapture);
+        ApplyMainWindowCaptureAffinity();
         if (!RegisterHotKey(handle, HotkeyId, ModControl | ModShift, KeyT))
         {
             StatusText.Text = "Ctrl+Shift+T başka bir uygulama tarafından kullanılıyor.";
         }
+    }
+
+    private void ApplyMainWindowCaptureAffinity()
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        // Uzak erişimde ExcludeFromCapture ana menüyü de görünmez yapıyor
+        var affinity = UseRemoteCompatibleOverlay() ? WdaNone : WdaExcludeFromCapture;
+        SetWindowDisplayAffinity(handle, affinity);
     }
 
     private IntPtr WindowMessageHook(
@@ -250,6 +566,11 @@ public partial class MainWindow : Window
 
     private async Task TranslateCursorScreenAsync()
     {
+        if (!EnsureSafetyAccepted())
+        {
+            return;
+        }
+
         if (_documentTranslationBusy)
         {
             _documentWindow?.Activate();
@@ -257,6 +578,8 @@ public partial class MainWindow : Window
         }
 
         ApplyRuntimeSettings();
+        _documentTranslator.Mode = _pipeline.TranslationMode;
+
         _documentTranslationBusy = true;
         _documentCts?.Cancel();
         _documentCts?.Dispose();
@@ -317,17 +640,36 @@ public partial class MainWindow : Window
 
     private void EnsureDocumentWindow()
     {
+        var remote = UseRemoteCompatibleOverlay();
+
+        if (_documentWindow is not null && _documentWindow.IsRemoteCompatible != remote)
+        {
+            RecreateDocumentWindowIfNeeded();
+        }
+
         if (_documentWindow is not null)
         {
+            _documentWindow.SetRemoteCompatible(remote);
             return;
         }
 
-        _documentWindow = new DocumentTranslationWindow();
+        _documentWindow = new DocumentTranslationWindow(remote);
         _documentWindow.Closed += (_, _) =>
         {
             _documentCts?.Cancel();
             _documentWindow = null;
         };
+    }
+
+    private void RecreateDocumentWindowIfNeeded()
+    {
+        if (_documentWindow is null)
+        {
+            return;
+        }
+
+        _documentWindow.Close();
+        _documentWindow = null;
     }
 
     private async Task ShutdownAsync()

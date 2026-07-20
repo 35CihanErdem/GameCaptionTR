@@ -6,16 +6,23 @@ namespace GameCaptionTR.Views;
 
 public partial class DocumentTranslationWindow : Window
 {
+    private const uint WdaNone = 0x00000000;
     private const uint WdaExcludeFromCapture = 0x00000011;
 
-    public DocumentTranslationWindow()
+    private readonly bool _remoteCompatible;
+
+    public bool IsRemoteCompatible => _remoteCompatible;
+
+    public DocumentTranslationWindow(bool remoteCompatible = false)
     {
+        _remoteCompatible = remoteCompatible || OverlayWindow.DetectRemoteSession();
         InitializeComponent();
-        SourceInitialized += (_, _) =>
-        {
-            var handle = new WindowInteropHelper(this).Handle;
-            SetWindowDisplayAffinity(handle, WdaExcludeFromCapture);
-        };
+        SourceInitialized += (_, _) => ApplyCaptureAffinity();
+    }
+
+    public void SetRemoteCompatible(bool remoteCompatible)
+    {
+        ApplyCaptureAffinity(forceVisible: remoteCompatible || _remoteCompatible);
     }
 
     public void ShowLoading()
@@ -40,6 +47,18 @@ public partial class DocumentTranslationWindow : Window
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private void ApplyCaptureAffinity(bool? forceVisible = null)
+    {
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle == IntPtr.Zero)
+        {
+            return;
+        }
+
+        var visible = forceVisible ?? _remoteCompatible;
+        SetWindowDisplayAffinity(handle, visible ? WdaNone : WdaExcludeFromCapture);
     }
 
     [DllImport("user32.dll")]

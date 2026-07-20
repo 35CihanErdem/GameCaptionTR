@@ -20,6 +20,7 @@ public sealed class CaptionPipelineService : IDisposable
     public string SourceLanguage { get; set; } = "en";
     public string TargetLanguage { get; set; } = "tr";
     public int IntervalMs { get; set; } = 900;
+    public TranslationMode TranslationMode { get; set; } = TranslationMode.Auto;
 
     public bool IsRunning { get; private set; }
 
@@ -137,6 +138,8 @@ public sealed class CaptionPipelineService : IDisposable
                 _lastSubtitleUtc = DateTime.UtcNow;
                 return;
             }
+
+            _translator.Mode = TranslationMode;
 
             var translated = await _translator.TranslateAsync(sourceText, SourceLanguage, TargetLanguage, token);
             if (string.IsNullOrWhiteSpace(translated))

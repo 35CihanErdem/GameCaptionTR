@@ -1,0 +1,69 @@
+<Window x:Class="GameCaptionTR.Views.SafetyDisclaimerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GameCaptionTR — Güvenlik Bilgisi"
+        Icon="pack://application:,,,/Assets/app.ico"
+        Width="560"
+        Height="520"
+        MinWidth="480"
+        MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#111827"
+        ShowInTaskbar="False">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="⚠ Güvenlik ve kullanım uyarısı"
+                       FontSize="22"
+                       FontWeight="Bold"
+                       Foreground="#FBBF24"/>
+            <TextBlock Text="Devam etmeden önce lütfen oku. Kullanmak tamamen senin kararın."
+                       Foreground="#9CA3AF"
+                       Margin="0,6,0,0"
+                       TextWrapping="Wrap"/>
+        </StackPanel>
+
+        <Border Grid.Row="1" Background="#1F2937" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock TextWrapping="Wrap"
+                           LineHeight="24"
+                           Foreground="#E5E7EB"
+                           FontSize="14"
+                           Text="GameCaptionTR bir HİLE DEĞİLDİR. Oyuna enjekte olmaz, bellek okumaz ve anti-cheat'i bypass etmez.&#x0a;&#x0a;Ne yapar?&#x0a;• Ekrandaki altyazı bölgesini görüntü olarak alır&#x0a;• Windows OCR ile metni okur&#x0a;• Çevrimiçi servisle Türkçeye çevirir&#x0a;• Sonucu ekranda overlay olarak gösterir&#x0a;&#x0a;Önerilen kullanım:&#x0a;• Hikâye / tek oyunculu oyunlar (RDR2, Witcher, GTA hikâye modu vb.)&#x0a;• Borderless Windowed veya Pencere modu&#x0a;&#x0a;Önerilmeyen kullanım:&#x0a;• Rekabetçi çok oyunculu oyunlar (Valorant, CS2, Apex vb.)&#x0a;• Online modlarda risk almak istemeyenler için&#x0a;&#x0a;Ban riski:&#x0a;Hiçbir yazılım %100 ban garantisi veremez. Bu araç cheat kadar riskli DEĞİLDİR; yine de kullanım sorumluluğu sana aittir.Oyunda risk almak istemiyorsan kullanma.&#x0a;&#x0a;Çeviri internet üzerinden yapılır; OCR için Windows dil paketi gerekir."/>
+            </ScrollViewer>
+        </Border>
+
+        <CheckBox x:Name="DontShowAgainCheck"
+                  Grid.Row="2"
+                  Content="Bir daha gösterme (uyarıyı kabul etmiş sayılırım)"
+                  Foreground="#D1D5DB"
+                  Margin="0,0,0,16"/>
+
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="DeclineButton"
+                    Content="Kullanmak istemiyorum"
+                    Click="Decline_Click"
+                    Padding="16,10"
+                    Margin="0,0,10,0"
+                    Background="#4B5563"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"/>
+            <Button Content="Anladım, devam et"
+                    Click="Accept_Click"
+                    Padding="16,10"
+                    Background="#059669"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    IsDefault="True"/>
+        </StackPanel>
+    </Grid>
+</Window>

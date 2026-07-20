@@ -2,11 +2,12 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using GameCaptionTR.Models;
 
 namespace GameCaptionTR.Services;
 
 /// <summary>
-/// Çevrimiçi çeviri. API anahtarı istemez; oran limiti olabilir.
+/// Çeviri: çevrimiçi (Google/MyMemory) veya çevrimdışı ONNX (en→tr).
 /// </summary>
 public sealed class TranslationService : IDisposable
 {
@@ -16,8 +17,20 @@ public sealed class TranslationService : IDisposable
     };
 
     private readonly Dictionary<string, string> _cache = new(StringComparer.Ordinal);
+    private OfflineTranslationService? _offline;
     private string? _lastSource;
     private string? _lastTranslation;
+
+    public TranslationMode Mode { get; set; } = TranslationMode.Auto;
+
+    public event Action<string>? StatusChanged;
+
+    public bool IsOfflineModelInstalled => GetOffline().IsModelInstalled;
+
+    public async Task DownloadOfflineModelAsync(CancellationToken cancellationToken)
+    {
+        await GetOffline().EnsureModelAsync(cancellationToken);
+    }
 
     public async Task<string> TranslateAsync(string text, string sourceLanguage, string targetLanguage, CancellationToken cancellationToken)
     {
@@ -32,7 +45,7 @@ public sealed class TranslationService : IDisposable
             return _lastTranslation ?? text;
         }
 
-        var cacheKey = $"{sourceLanguage}|{targetLanguage}|{text}";
+        var cacheKey = $"{Mode}|{sourceLanguage}|{targetLanguage}|{text}";
         if (_cache.TryGetValue(cacheKey, out var cached))
         {
             _lastSource = text;
@@ -40,16 +53,43 @@ public sealed class TranslationService : IDisposable
             return cached;
         }
 
-        // Aynı cümleye çok yakın OCR gürültüsünü engelle
         if (!string.IsNullOrEmpty(_lastSource) && Similarity(_lastSource, text) > 0.92)
         {
             return _lastTranslation ?? text;
         }
 
-        var translated = await TranslateWithGoogleAsync(text, sourceLanguage, targetLanguage, cancellationToken);
-        if (string.IsNullOrWhiteSpace(translated))
+        string translated;
+        if (ShouldUseOffline(sourceLanguage, targetLanguage))
         {
-            translated = await TranslateWithMyMemoryAsync(text, sourceLanguage, targetLanguage, cancellationToken);
+            try
+            {
+                translated = await GetOffline().TranslateAsync(text, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                StatusChanged?.Invoke("Çevrimdışı çeviri hatası: " + ex.Message);
+                translated = string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(translated) && Mode == TranslationMode.Auto && NetworkHelper.IsInternetAvailable())
+            {
+                translated = await TranslateOnlineAsync(text, sourceLanguage, targetLanguage, cancellationToken);
+            }
+        }
+        else
+        {
+            translated = await TranslateOnlineAsync(text, sourceLanguage, targetLanguage, cancellationToken);
+            if (string.IsNullOrWhiteSpace(translated) && Mode == TranslationMode.Auto && SupportsOffline(sourceLanguage, targetLanguage))
+            {
+                try
+                {
+                    translated = await GetOffline().TranslateAsync(text, cancellationToken);
+                }
+                catch
+                {
+                    // online zaten başarısızdı
+                }
+            }
         }
 
         if (string.IsNullOrWhiteSpace(translated))
@@ -66,6 +106,54 @@ public sealed class TranslationService : IDisposable
         _lastSource = text;
         _lastTranslation = translated;
         return translated;
+    }
+
+    private async Task<string> TranslateOnlineAsync(
+        string text,
+        string sourceLanguage,
+        string targetLanguage,
+        CancellationToken cancellationToken)
+    {
+        var translated = await TranslateWithGoogleAsync(text, sourceLanguage, targetLanguage, cancellationToken);
+        if (string.IsNullOrWhiteSpace(translated))
+        {
+            translated = await TranslateWithMyMemoryAsync(text, sourceLanguage, targetLanguage, cancellationToken);
+        }
+
+        return translated;
+    }
+
+    private bool ShouldUseOffline(string sourceLanguage, string targetLanguage)
+    {
+        if (!SupportsOffline(sourceLanguage, targetLanguage))
+        {
+            return false;
+        }
+
+        return Mode switch
+        {
+            TranslationMode.Offline => true,
+            TranslationMode.Auto => !NetworkHelper.IsInternetAvailable(),
+            _ => false
+        };
+    }
+
+    private static bool SupportsOffline(string sourceLanguage, string targetLanguage)
+    {
+        var src = sourceLanguage.Split('-')[0].ToLowerInvariant();
+        return src == "en" && targetLanguage.Equals("tr", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private OfflineTranslationService GetOffline()
+    {
+        if (_offline is not null)
+        {
+            return _offline;
+        }
+
+        _offline = new OfflineTranslationService();
+        _offline.StatusChanged += msg => StatusChanged?.Invoke(msg);
+        return _offline;
     }
 
     public async Task<string> TranslateDocumentAsync(
@@ -260,5 +348,9 @@ public sealed class TranslationService : IDisposable
         }
     }
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose()
+    {
+        _offline?.Dispose();
+        _http.Dispose();
+    }
 }

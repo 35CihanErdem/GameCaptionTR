@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="GameCaptionTR — Canlı Oyun Altyazı Çevirici"
         Icon="pack://application:,,,/Assets/app.ico"
-        Height="620"
+        Height="720"
         Width="780"
         MinHeight="560"
         MinWidth="700"
@@ -39,6 +39,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -62,6 +63,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,12,12">
@@ -70,8 +72,8 @@
                 </StackPanel>
 
                 <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,12,12">
-                    <TextBlock Text="Tarama aralığı (ms)" Margin="0,0,0,6"/>
-                    <TextBox x:Name="IntervalBox" Text="900"/>
+                    <TextBlock Text="Çeviri modu" Margin="0,0,0,6"/>
+                    <ComboBox x:Name="TranslationModeCombo" SelectionChanged="TranslationModeCombo_SelectionChanged"/>
                 </StackPanel>
 
                 <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,12">
@@ -79,19 +81,51 @@
                     <TextBox x:Name="FontSizeBox" Text="28"/>
                 </StackPanel>
 
-                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,8">
+                <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,12,12">
+                    <TextBlock Text="Tarama aralığı (ms)" Margin="0,0,0,6"/>
+                    <TextBox x:Name="IntervalBox" Text="900"/>
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,0,0,12">
                     <TextBlock Text="Altyazı bölgesi" Margin="0,0,0,6"/>
                     <TextBlock x:Name="RegionText" Text="Henüz seçilmedi" Foreground="#93C5FD"/>
                 </StackPanel>
 
-                <CheckBox x:Name="ClickThroughCheck"
-                          Grid.Row="1"
-                          Grid.Column="2"
-                          Content="Tıklamaları oyuna geçir"
-                          Foreground="#E5E7EB"
-                          VerticalAlignment="Center"/>
+                <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Center">
+                    <Button x:Name="DownloadOfflineModelButton"
+                            Content="Çevrimdışı modeli indir (~530MB)"
+                            Click="DownloadOfflineModel_Click"
+                            Padding="10,6"
+                            Background="#0D9488"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            HorizontalAlignment="Left"
+                            ToolTip="İnternetsiz oynamak için bir kez indir. İngilizce → Türkçe."/>
+                    <TextBlock x:Name="OfflineModelStatusText"
+                               Foreground="#6EE7B7"
+                               FontSize="12"
+                               Margin="0,6,0,0"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
 
-                <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
+                <StackPanel Grid.Row="2" Grid.Column="2" VerticalAlignment="Center">
+                    <CheckBox x:Name="ClickThroughCheck"
+                              Content="Tıklamaları oyuna geçir"
+                              Foreground="#E5E7EB"
+                              Margin="0,0,0,6"/>
+                    <CheckBox x:Name="ShowInCapturesCheck"
+                              Content="Kayıtlarda paneli göster (Win+G)"
+                              Foreground="#E5E7EB"
+                              Margin="0,0,0,6"
+                              ToolTip="Açıkken çeviri paneli Win+G / Discord kaydında görünür."/>
+                    <CheckBox x:Name="RemoteAccessCheck"
+                              Content="Uzak erişim modu (RDP/AnyDesk)"
+                              Foreground="#FDE68A"
+                              ToolTip="Uzaktan bağlanınca paneli görmek için bunu aç. Panel opak olur ama görünür."/>
+                </StackPanel>
+
+                <WrapPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
                     <Button Content="1) Bölge Seç" Click="SelectRegion_Click"/>
                     <Button Content="2) Başlat" x:Name="StartButton" Click="Start_Click" Background="#059669"/>
                     <Button Content="Durdur" x:Name="StopButton" Click="Stop_Click" IsEnabled="False" Background="#DC2626"/>
@@ -103,7 +137,26 @@
             </Grid>
         </Border>
 
-        <Border Grid.Row="2" Background="#1F2937" CornerRadius="12" Padding="16" Margin="0,0,0,14">
+        <Border Grid.Row="2" Background="#1F2937" CornerRadius="12" Padding="16" Margin="0,0,0,14" BorderBrush="#92400E" BorderThickness="1">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,8">
+                    <Button DockPanel.Dock="Right"
+                            Content="Detaylı bilgi"
+                            Click="ShowSafetyDisclaimer_Click"
+                            Padding="10,6"
+                            Background="#4B5563"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Cursor="Hand"
+                            VerticalAlignment="Top"/>
+                    <TextBlock Text="Güvenlik ve ban riski" FontWeight="SemiBold" Foreground="#FBBF24"/>
+                </DockPanel>
+                <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="#D1D5DB" FontSize="13"
+                           Text="Bu araç HİLE DEĞİLDİR; oyuna enjekte olmaz. Hikâye / tek oyunculu oyunlar için tasarlanmıştır (RDR2, Witcher vb.). Rekabetçi online oyunlarda kullanmayın. %100 ban garantisi verilemez — risk sana aittir."/>
+            </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" Background="#1F2937" CornerRadius="12" Padding="16" Margin="0,0,0,14">
             <StackPanel>
                 <TextBlock Text="Nasıl kullanılır" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <TextBlock TextWrapping="Wrap" LineHeight="22" Foreground="#D1D5DB"
@@ -111,7 +164,7 @@
             </StackPanel>
         </Border>
 
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -137,7 +190,7 @@
         </Grid>
 
         <TextBlock x:Name="StatusText"
-                   Grid.Row="4"
+                   Grid.Row="5"
                    Margin="0,14,0,0"
                    Text="Hazır. Bölge seçip başlat."
                    Foreground="#93C5FD"/>

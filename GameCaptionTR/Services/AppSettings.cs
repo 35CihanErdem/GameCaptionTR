@@ -23,6 +23,26 @@ public sealed class AppSettings
     public double OverlayWidth { get; set; } = 900;
     public bool ClickThrough { get; set; }
 
+    /// <summary>
+    /// true ise overlay Win+G / Discord kaydında görünür.
+    /// false ise OCR feedback'ini önlemek için kayıttan gizlenir.
+    /// </summary>
+    public bool ShowOverlayInCaptures { get; set; }
+
+    /// <summary>
+    /// RDP / AnyDesk / uzak bağlanırken panelin görünmesi için opak mod.
+    /// </summary>
+    public bool RemoteAccessMode { get; set; } = true;
+
+    /// <summary>Kullanıcı güvenlik uyarısını okuyup kabul etti mi.</summary>
+    public bool SafetyDisclaimerAccepted { get; set; }
+
+    /// <summary>İlk uyarı bir daha gösterilmesin.</summary>
+    public bool SafetyDisclaimerDismissed { get; set; }
+
+    /// <summary>Online, Offline veya Auto</summary>
+    public string TranslationModeSetting { get; set; } = "Auto";
+
     public static AppSettings Load()
     {
         try
